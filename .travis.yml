@@ -1,0 +1,24 @@
+sudo: required
+services:
+  - docker
+
+before_install:
+  - docker build -t harshitappd/react-test -f ./client/Dockerfile.dev ./client
+
+script:
+  - docker run -e CI=true harshitappd/react-test npm test -- --coverage
+
+after_success:
+  - docker build -t harshitappd/multi-client ./client
+  - docker build -t harshitappd/multi-nginx ./nginx
+  - docker build -t harshitappd/multi-server ./server
+  - docker build -t harshitappd/multi-worker ./worker
+
+  # Log in to the docker CLI (Add docker creds in travis as env vars)
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+
+  #take those images and push them to docker hub
+  - docker push harshitappd/multi-client
+  - docker push harshitappd/multi-nginx
+  - docker push harshitappd/multi-server
+  - docker push harshitappd/multi-worker
